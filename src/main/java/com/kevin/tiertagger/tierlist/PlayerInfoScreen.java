@@ -132,7 +132,7 @@ public class PlayerInfoScreen extends CloseableScreen {
         });
     }
 
-    private Text formatTier(@NotNull GameMode mode, PlayerInfo.Ranking tier) {
+    private Text formatTier(@NotNull GameMode gamemode, PlayerInfo.Ranking tier) {
         MutableText tierText = getTierText(tier.tier(), tier.pos(), tier.retired());
 
         if (tier.comparablePeak() < tier.comparableTier()) {
@@ -143,8 +143,8 @@ public class PlayerInfoScreen extends CloseableScreen {
                     .append(Text.literal(")").styled(s -> s.withColor(Formatting.GRAY)));
         }
 
-        return Text.empty()
-                .append(mode.formatted())
+        return Text.literal("• ")
+                .append(gamemode.title())
                 .append(Text.literal(": ").formatted(Formatting.GRAY))
                 .append(tierText);
     }
