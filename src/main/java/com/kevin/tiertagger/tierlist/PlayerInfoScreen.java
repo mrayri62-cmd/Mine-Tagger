@@ -33,7 +33,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Setter
@@ -60,8 +59,6 @@ public class PlayerInfoScreen extends CloseableScreen {
         this.addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> MinecraftClient.getInstance().setScreen(parent))
                 .dimensions(this.width / 2 - 100, this.height - 27, 200, 20)
                 .build());
-
-        this.fetchTexture(this.player).thenAccept(this::setTexture);
 
         if (this.info == null) {
             TierCache.searchPlayer(this.player).thenAccept(this::setInfo)
@@ -92,6 +89,8 @@ public class PlayerInfoScreen extends CloseableScreen {
                         }
                     });
         }
+
+        this.texture = this.fetchTexture(this.player);
     }
 
     @Override
@@ -122,29 +121,36 @@ public class PlayerInfoScreen extends CloseableScreen {
         }
     }
 
-    private CompletableFuture<Identifier> fetchTexture(String user) {
+    // 1.21.5 edit: you can only register textures on the render thread, therefore weh weh weh weh weh we make this sync
+    private Identifier fetchTexture(String user) {
         String username = user.toLowerCase();
         Identifier tex = Identifier.of(TierTagger.MOD_ID, "player_" + username);
 
-        if (Ukutils.textureExists(tex)) return CompletableFuture.completedFuture(tex);
+        if (Ukutils.textureExists(tex)) return tex;
 
         TextureManager texManager = MinecraftClient.getInstance().getTextureManager();
         HttpRequest req = HttpRequest.newBuilder(URI.create("https://mc-heads.net/body/" + username + "/240")).GET().build();
 
-        return HTTP_CLIENT.sendAsync(req, HttpResponse.BodyHandlers.ofByteArray()).thenApply(r -> {
-            if (r.statusCode() == 200) {
+        try {
+            HttpResponse<byte[]> res = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofByteArray());
+
+            if (res.statusCode() == 200) {
                 try {
-                    NativeImage image = NativeImage.read(r.body());
-                    texManager.registerTexture(tex, new NativeImageBackedTexture(image));
+                    NativeImage image = NativeImage.read(res.body());
+                    texManager.registerTexture(tex, new NativeImageBackedTexture(tex::toString, image));
                 } catch (IOException e) {
                     TierTagger.getLogger().error("Failed to register head texture", e);
                 }
             } else {
-                TierTagger.getLogger().error("Could not fetch head texture: {} {}", r.statusCode(), new String(r.body()));
+                TierTagger.getLogger().error("Could not fetch head texture: {} {}", res.statusCode(), new String(res.body()));
             }
+        } catch (IOException e) {
+            TierTagger.getLogger().error("Failed to fetch head texture", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
-            return tex;
-        });
+        return tex;
     }
 
     private Text formatTier(@NotNull GameMode gamemode, PlayerInfo.Ranking tier) {
