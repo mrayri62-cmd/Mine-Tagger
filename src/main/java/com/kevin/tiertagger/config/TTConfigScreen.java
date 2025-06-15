@@ -37,7 +37,7 @@ public class TTConfigScreen extends TabbedConfigScreen<TierTaggerConfig> {
             return new WidgetCreator[]{
                     CyclingOption.ofBoolean("tiertagger.config.enabled", config.isEnabled(), config::setEnabled),
                     new CyclingOption<>("tiertagger.config.gamemode", TierCache.getGamemodes(), config.getGameMode(), m -> config.setGameMode(m.id()), m -> Text.literal(m.title()),
-                            m -> m.isNone() ? Tooltip.of(Text.translatable("tiertagger.config.gamemode.none")) : null),
+                            m -> m.isNone() ? Tooltip.of(Text.translatable("tiertagger.config.gamemode.none")) : null, !config.getGameMode().isNone()),
                     CyclingOption.ofBoolean("tiertagger.config.retired", config.isShowRetired(), config::setShowRetired),
                     CyclingOption.ofTranslatableEnum("tiertagger.config.highest", TierTaggerConfig.HighestMode.class, config.getHighestMode(), config::setHighestMode, SimpleOption.constantTooltip(Text.translatable("tiertagger.config.highest.desc"))),
                     CyclingOption.ofTranslatableEnum("tiertagger.config.statistic", TierTaggerConfig.Statistic.class, config.getShownStatistic(), config::setShownStatistic),
@@ -60,18 +60,18 @@ public class TTConfigScreen extends TabbedConfigScreen<TierTaggerConfig> {
             List<WidgetCreator> widgets = Arrays.stream(TierList.values())
                     .map(t -> {
                         boolean isCurrent = current.isPresent() && current.get() == t;
-                        return new SimpleButton(t.styledName(isCurrent), b -> {
+                        return new SimpleButton(Text.of(t.styledName(isCurrent)), b -> {
                             config.setBaseUrl(t.getUrl());
                             TierTagger.getManager().saveConfig();
                             TTConfigScreen.this.close();
                             TierCache.init();
                             Ukutils.sendToast(Text.literal("Tierlist changed to " + t.getName() + "!"), Text.literal("Reloading tiers..."));
-                        });
+                        }, !isCurrent);
                     })
                     .collect(Collectors.toList());
 
             if (current.isEmpty()) {
-                widgets.add(new SimpleButton("Custom (selected, " + config.getBaseUrl() + ")", b -> {}));
+                widgets.add(new SimpleButton(Text.of("Custom (selected, " + config.getBaseUrl() + ")"), b -> {}, false));
             }
 
             return widgets.toArray(WidgetCreator[]::new);
