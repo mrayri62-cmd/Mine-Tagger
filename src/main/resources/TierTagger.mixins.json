@@ -7,7 +7,6 @@
     "MixinPlayerEntity"
   ],
   "client": [
-    "MinecraftClientAccessor",
     "MixinTextDisplayEntityRenderer",
     "MixinTitleScreen"
   ],
