@@ -25,7 +25,7 @@ public class PlayerSearchScreen extends CloseableScreen {
     private ButtonWidget searchButton;
 
     private boolean searching = false;
-    private CompletableFuture<PlayerInfoScreen> future = null;
+    private CompletableFuture<?> future = null;
 
     public PlayerSearchScreen(Screen parent) {
         super("Player Search", parent);
@@ -82,6 +82,7 @@ public class PlayerSearchScreen extends CloseableScreen {
 
         this.future = TierCache.searchPlayer(username)
                 .thenCombine(skinFuture, (info, skin) -> new PlayerInfoScreen(this, info, skin))
+                .thenAccept(screen -> MinecraftClient.getInstance().execute(() -> MinecraftClient.getInstance().setScreen(screen)))
                 .whenComplete((v, t) -> {
                     if (t != null) {
                         Ukutils.sendToast(Text.translatable("tiertagger.search.unknown"), null);
@@ -103,10 +104,5 @@ public class PlayerSearchScreen extends CloseableScreen {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 16777215);
         this.textField.render(context, mouseX, mouseY, delta);
-
-        if (this.future != null && this.future.isDone() && !this.future.isCompletedExceptionally()) {
-            MinecraftClient.getInstance().setScreen(this.future.join());
-            this.future = null;
-        }
     }
 }
