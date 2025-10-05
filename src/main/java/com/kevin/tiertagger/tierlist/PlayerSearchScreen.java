@@ -92,6 +92,13 @@ public class PlayerSearchScreen extends CloseableScreen {
     }
 
     @Override
+    public void resize(MinecraftClient client, int width, int height) {
+        String string = this.textField.getText();
+        this.init(client, width, height);
+        this.textField.setText(string);
+    }
+
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 16777215);
