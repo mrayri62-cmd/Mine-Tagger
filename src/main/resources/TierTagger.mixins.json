@@ -7,6 +7,7 @@
     "MixinPlayerEntity"
   ],
   "client": [
+    "MixinPlayerListHud",
     "MixinTextDisplayEntityRenderer",
     "MixinTitleScreen"
   ],

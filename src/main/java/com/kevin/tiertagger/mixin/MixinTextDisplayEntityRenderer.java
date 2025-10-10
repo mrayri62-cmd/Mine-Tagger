@@ -24,7 +24,7 @@ public class MixinTextDisplayEntityRenderer {
             for (PlayerEntity player : world.getPlayers()) {
                 int index = stringText.indexOf(player.getNameForScoreboard());
                 if (!isSurrounded(stringText, index, player.getNameForScoreboard().length())) {
-                    return TierTagger.appendTier(player, text);
+                    return TierTagger.appendTier(player.getUuid(), text);
                 }
             }
         }
