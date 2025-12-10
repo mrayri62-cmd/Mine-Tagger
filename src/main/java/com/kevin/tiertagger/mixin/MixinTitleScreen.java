@@ -3,12 +3,12 @@ package com.kevin.tiertagger.mixin;
 import com.kevin.tiertagger.TierTagger;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ConfirmScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.TitleScreen;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -23,7 +23,7 @@ public class MixinTitleScreen extends Screen {
     @Unique
     private static final AtomicBoolean hasCheckedVersion = new AtomicBoolean(false);
 
-    protected MixinTitleScreen(Text title) {
+    protected MixinTitleScreen(Component title) {
         super(title);
     }
 
@@ -31,39 +31,40 @@ public class MixinTitleScreen extends Screen {
     public void showUpdateScreen(CallbackInfo ci) {
         if (hasCheckedVersion.get()) return;
 
-        Version currentVersion = FabricLoader.getInstance().getModContainer("tier-tagger").map(m -> m.getMetadata().getVersion()).orElse(null);
+        Version currentVersion = FabricLoader.getInstance().getModContainer("tier-tagger")
+                .map(m -> m.getMetadata().getVersion()).orElse(null);
         Version latestVersion = TierTagger.getLatestVersion();
 
         if (TierTagger.isObsolete()) {
-            MinecraftClient.getInstance().setScreen(new ConfirmScreen(
+            Minecraft.getInstance().setScreen(new ConfirmScreen(
                     b -> {
                         if (b) {
-                            MinecraftClient.getInstance().scheduleStop();
+                            Minecraft.getInstance().stop();
                         } else {
-                            MinecraftClient.getInstance().setScreen(this);
+                            Minecraft.getInstance().setScreen(this);
                         }
                     },
-                    Text.translatable("tiertagger.obsolete.title"),
-                    Text.translatable("tiertagger.obsolete.desc"),
-                    Text.translatable("menu.quit"),
-                    Text.translatable("tiertagger.outdated.ignore")
+                    Component.translatable("tiertagger.obsolete.title"),
+                    Component.translatable("tiertagger.obsolete.desc"),
+                    Component.translatable("menu.quit"),
+                    Component.translatable("tiertagger.outdated.ignore")
             ));
         } else if (currentVersion != null && latestVersion != null && currentVersion.compareTo(latestVersion) < 0) {
-            Text newVersion = Text.literal(latestVersion.getFriendlyString()).formatted(Formatting.GREEN);
+            Component newVersion = Component.literal(latestVersion.getFriendlyString()).withStyle(ChatFormatting.GREEN);
 
-            MinecraftClient.getInstance().setScreen(new ConfirmScreen(
+            Minecraft.getInstance().setScreen(new ConfirmScreen(
                     b -> {
                         if (b) {
                             String url = "https://modrinth.com/mod/tiertagger/version/" + latestVersion.getFriendlyString();
-                            Util.getOperatingSystem().open(url);
+                            Util.getPlatform().openUri(url);
                         }
 
-                        MinecraftClient.getInstance().setScreen(this);
+                        Minecraft.getInstance().setScreen(this);
                     },
-                    Text.translatable("tiertagger.outdated.title"),
-                    Text.translatable("tiertagger.outdated.desc", newVersion),
-                    Text.translatable("tiertagger.outdated.download"),
-                    Text.translatable("tiertagger.outdated.ignore")
+                    Component.translatable("tiertagger.outdated.title"),
+                    Component.translatable("tiertagger.outdated.desc", newVersion),
+                    Component.translatable("tiertagger.outdated.download"),
+                    Component.translatable("tiertagger.outdated.ignore")
             ));
         }
 

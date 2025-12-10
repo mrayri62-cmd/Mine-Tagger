@@ -4,11 +4,11 @@ import com.kevin.tiertagger.TierCache;
 import com.kevin.tiertagger.TierTagger;
 import com.kevin.tiertagger.model.TierList;
 import com.kevin.tiertagger.tierlist.PlayerSearchScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tab.Tab;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.option.SimpleOption;
-import net.minecraft.text.Text;
+import net.minecraft.client.OptionInstance;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.tabs.Tab;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.uku3lig.ukulib.config.option.*;
 import net.uku3lig.ukulib.config.option.widget.ButtonTab;
 import net.uku3lig.ukulib.config.screen.TabbedConfigScreen;
@@ -36,10 +36,10 @@ public class TTConfigScreen extends TabbedConfigScreen<TierTaggerConfig> {
         protected WidgetCreator[] getWidgets(TierTaggerConfig config) {
             return new WidgetCreator[]{
                     CyclingOption.ofBoolean("tiertagger.config.enabled", config.isEnabled(), config::setEnabled),
-                    new CyclingOption<>("tiertagger.config.gamemode", TierCache.getGamemodes(), config.getGameMode(), m -> config.setGameMode(m.id()), m -> Text.literal(m.title()),
-                            m -> m.isNone() ? Tooltip.of(Text.translatable("tiertagger.config.gamemode.none")) : null, !config.getGameMode().isNone()),
+                    new CyclingOption<>("tiertagger.config.gamemode", TierCache.getGamemodes(), config.getGameMode(), m -> config.setGameMode(m.id()), m -> Component.literal(m.title()),
+                            m -> m.isNone() ? Tooltip.create(Component.translatable("tiertagger.config.gamemode.none")) : null, !config.getGameMode().isNone()),
                     CyclingOption.ofBoolean("tiertagger.config.retired", config.isShowRetired(), config::setShowRetired),
-                    CyclingOption.ofTranslatableEnum("tiertagger.config.highest", TierTaggerConfig.HighestMode.class, config.getHighestMode(), config::setHighestMode, SimpleOption.constantTooltip(Text.translatable("tiertagger.config.highest.desc"))),
+                    CyclingOption.ofTranslatableEnum("tiertagger.config.highest", TierTaggerConfig.HighestMode.class, config.getHighestMode(), config::setHighestMode, OptionInstance.cachedConstantTooltip(Component.translatable("tiertagger.config.highest.desc"))),
                     CyclingOption.ofBoolean("tiertagger.config.icons", config.isShowIcons(), config::setShowIcons),
                     CyclingOption.ofBoolean("tiertagger.config.playerList", config.isPlayerList(), config::setPlayerList),
                     new SimpleButton("tiertagger.clear", b -> TierCache.clearCache()),
@@ -60,18 +60,18 @@ public class TTConfigScreen extends TabbedConfigScreen<TierTaggerConfig> {
             List<WidgetCreator> widgets = Arrays.stream(TierList.values())
                     .map(t -> {
                         boolean isCurrent = current.isPresent() && current.get() == t;
-                        return new SimpleButton(Text.of(t.styledName(isCurrent)), b -> {
+                        return new SimpleButton(Component.literal(t.styledName(isCurrent)), b -> {
                             config.setApiUrl(t.getUrl());
                             TierTagger.getManager().saveConfig();
-                            TTConfigScreen.this.close();
+                            TTConfigScreen.this.onClose();
                             TierCache.init();
-                            Ukutils.sendToast(Text.literal("Tierlist changed to " + t.getName() + "!"), Text.literal("Reloading tiers..."));
+                            Ukutils.sendToast(Component.literal("Tierlist changed to " + t.getName() + "!"), Component.literal("Reloading tiers..."));
                         }, !isCurrent);
                     })
                     .collect(Collectors.toList());
 
             if (current.isEmpty()) {
-                widgets.add(new SimpleButton(Text.of("Custom (selected, " + config.getApiUrl() + ")"), b -> {}, false));
+                widgets.add(new SimpleButton(Component.literal("Custom (selected, " + config.getApiUrl() + ")"), b -> {}, false));
             }
 
             return widgets.toArray(WidgetCreator[]::new);

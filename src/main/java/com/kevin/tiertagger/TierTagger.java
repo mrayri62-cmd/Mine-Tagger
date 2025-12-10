@@ -14,14 +14,14 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
+import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.entity.Entity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
 import net.uku3lig.ukulib.config.ConfigManager;
 import net.uku3lig.ukulib.utils.PlayerArgumentType;
 import net.uku3lig.ukulib.utils.Ukutils;
@@ -71,27 +71,27 @@ public class TierTagger implements ModInitializer {
                         .then(argument("player", PlayerArgumentType.player())
                                 .executes(TierTagger::displayTierInfo))));
 
-        Ukutils.registerKeybinding(new KeyBinding("tiertagger.keybind.gamemode", GLFW.GLFW_KEY_UNKNOWN, KeyBinding.Category.create(Identifier.of("tiertagger", "key"))),
+        Ukutils.registerKeybinding(new KeyMapping("tiertagger.keybind.gamemode", GLFW.GLFW_KEY_UNKNOWN, KeyMapping.Category.register(Identifier.fromNamespaceAndPath("tiertagger", "key"))),
                 mc -> {
                     GameMode next = TierCache.findNextMode(manager.getConfig().getGameMode());
                     manager.getConfig().setGameMode(next.id());
 
                     if (mc.player != null) {
-                        Text message = Text.literal("Displayed gamemode: ").append(next.asStyled(false));
-                        mc.player.sendMessage(message, true);
+                        Component message = Component.literal("Displayed gamemode: ").append(next.asStyled(false));
+                        mc.player.displayClientMessage(message, true);
                     }
                 });
 
         checkForUpdates();
     }
 
-    public static Text appendTier(UUID uuid, Text text) {
-        MutableText following = getPlayerTier(uuid)
+    public static Component appendTier(UUID uuid, Component text) {
+        MutableComponent following = getPlayerTier(uuid)
                 .map(entry -> {
-                    Text tierText = getRankingText(entry.ranking(), false);
+                    Component tierText = getRankingText(entry.ranking(), false);
 
                     if (manager.getConfig().isShowIcons() && entry.mode() != null && entry.mode().icon().isPresent()) {
-                        return Text.literal(entry.mode().icon().get().toString()).append(tierText);
+                        return Component.literal(entry.mode().icon().get().toString()).append(tierText);
                     } else {
                         return tierText.copy();
                     }
@@ -99,7 +99,7 @@ public class TierTagger implements ModInitializer {
                 .orElse(null);
 
         if (following != null) {
-            following.append(Text.literal(" | ").formatted(Formatting.GRAY));
+            following.append(Component.literal(" | ").withStyle(ChatFormatting.GRAY));
             return following.append(text);
         }
 
@@ -131,27 +131,27 @@ public class TierTagger implements ModInitializer {
                 });
     }
 
-    private static MutableText getTierText(int tier, int pos, boolean retired) {
+    private static MutableComponent getTierText(int tier, int pos, boolean retired) {
         StringBuilder text = new StringBuilder();
         if (retired) text.append("R");
         text.append(pos == 0 ? "H" : "L").append("T").append(tier);
 
         int color = TierTagger.getTierColor(text.toString());
-        return Text.literal(text.toString()).styled(s -> s.withColor(color));
+        return Component.literal(text.toString()).withStyle(s -> s.withColor(color));
     }
 
-    public static Text getRankingText(PlayerInfo.Ranking ranking, boolean showPeak) {
+    public static Component getRankingText(PlayerInfo.Ranking ranking, boolean showPeak) {
         if (ranking.retired() && ranking.peakTier() != null && ranking.peakPos() != null) {
             return getTierText(ranking.peakTier(), ranking.peakPos(), true);
         } else {
-            MutableText tierText = getTierText(ranking.tier(), ranking.pos(), false);
+            MutableComponent tierText = getTierText(ranking.tier(), ranking.pos(), false);
 
             if (showPeak && ranking.comparablePeak() < ranking.comparableTier()) {
                 // warning caused by potential NPE by unboxing of peak{Tier,Pos} which CANNOT happen, see impl of comparablePeak
                 // noinspection DataFlowIssue
-                tierText.append(Text.literal(" (peak: ").styled(s -> s.withColor(Formatting.GRAY)))
+                tierText.append(Component.literal(" (peak: ").withStyle(s -> s.withColor(ChatFormatting.GRAY)))
                         .append(getTierText(ranking.peakTier(), ranking.peakPos(), false))
-                        .append(Text.literal(")").styled(s -> s.withColor(Formatting.GRAY)));
+                        .append(Component.literal(")").withStyle(s -> s.withColor(ChatFormatting.GRAY)));
             }
 
             return tierText;
@@ -161,20 +161,20 @@ public class TierTagger implements ModInitializer {
     private static int displayTierInfo(CommandContext<FabricClientCommandSource> ctx) {
         PlayerArgumentType.PlayerSelector selector = ctx.getArgument("player", PlayerArgumentType.PlayerSelector.class);
 
-        Optional<Map<String, PlayerInfo.Ranking>> rankings = ctx.getSource().getWorld().getPlayers().stream()
-                .filter(p -> p.getNameForScoreboard().equalsIgnoreCase(selector.name()) || p.getUuidAsString().equalsIgnoreCase(selector.name()))
+        Optional<Map<String, PlayerInfo.Ranking>> rankings = ctx.getSource().getWorld().players().stream()
+                .filter(p -> p.getScoreboardName().equalsIgnoreCase(selector.name()) || p.getStringUUID().equalsIgnoreCase(selector.name()))
                 .findFirst()
-                .map(Entity::getUuid)
+                .map(Entity::getUUID)
                 .flatMap(TierCache::getPlayerRankings);
 
         if (rankings.isPresent()) {
             ctx.getSource().sendFeedback(printPlayerInfo(selector.name(), rankings.get()));
         } else {
-            ctx.getSource().sendFeedback(Text.of("[TierTagger] Searching..."));
+            ctx.getSource().sendFeedback(Component.literal("[TierTagger] Searching..."));
             TierCache.searchPlayer(selector.name())
-                    .thenAccept(p -> MinecraftClient.getInstance().execute(() -> ctx.getSource().sendFeedback(printPlayerInfo(selector.name(), p.rankings()))))
+                    .thenAccept(p -> Minecraft.getInstance().execute(() -> ctx.getSource().sendFeedback(printPlayerInfo(selector.name(), p.rankings()))))
                     .exceptionally(t -> {
-                        ctx.getSource().sendError(Text.of("Could not find player " + selector.name()));
+                        ctx.getSource().sendError(Component.literal("Could not find player " + selector.name()));
                         return null;
                     });
         }
@@ -182,17 +182,17 @@ public class TierTagger implements ModInitializer {
         return 0;
     }
 
-    private static Text printPlayerInfo(String name, Map<String, PlayerInfo.Ranking> rankings) {
+    private static Component printPlayerInfo(String name, Map<String, PlayerInfo.Ranking> rankings) {
         if (rankings.isEmpty()) {
-            return Text.literal(name + " does not have any tiers.");
+            return Component.literal(name + " does not have any tiers.");
         } else {
-            MutableText text = Text.empty().append("=== Rankings for " + name + " ===");
+            MutableComponent text = Component.empty().append("=== Rankings for " + name + " ===");
 
             rankings.forEach((m, r) -> {
                 if (m == null) return;
                 GameMode mode = TierCache.findModeOrUgly(m);
-                Text tierText = getRankingText(r, true);
-                text.append(Text.literal("\n").append(mode.asStyled(true)).append(": ").append(tierText));
+                Component tierText = getRankingText(r, true);
+                text.append(Component.literal("\n").append(mode.asStyled(true)).append(": ").append(tierText));
             });
 
             return text;
@@ -208,7 +208,7 @@ public class TierTagger implements ModInitializer {
     }
 
     private static void checkForUpdates() {
-        String versionParam = "[\"%s\"]".formatted(SharedConstants.getGameVersion().name());
+        String versionParam = "[\"%s\"]".formatted(SharedConstants.getCurrentVersion().name());
         String fullUrl = UPDATE_URL_FORMAT.formatted(URLEncoder.encode(versionParam, StandardCharsets.UTF_8));
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(fullUrl)).GET().build();

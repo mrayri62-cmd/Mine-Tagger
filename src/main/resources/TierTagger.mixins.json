@@ -4,11 +4,11 @@
   "package": "com.kevin.tiertagger.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "MixinPlayerEntity"
+    "MixinPlayer"
   ],
   "client": [
-    "MixinPlayerListHud",
-    "MixinTextDisplayEntityRenderer",
+    "MixinPlayerTabOverlay",
+    "MixinTextDisplayRenderer",
     "MixinTitleScreen"
   ],
   "injectors": {

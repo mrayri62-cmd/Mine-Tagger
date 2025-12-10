@@ -2,19 +2,20 @@ package com.kevin.tiertagger.tierlist;
 
 import com.kevin.tiertagger.TierCache;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.PlayerSkinWidget;
-import net.minecraft.client.resource.language.I18n;
-import net.minecraft.entity.player.SkinTextures;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
-import net.minecraft.util.ApiServices;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.PlayerSkinWidget;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.Services;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.uku3lig.ukulib.config.option.widget.TextInputWidget;
 import net.uku3lig.ukulib.config.screen.CloseableScreen;
 import net.uku3lig.ukulib.utils.Ukutils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +23,7 @@ import java.util.function.Supplier;
 
 public class PlayerSearchScreen extends CloseableScreen {
     private TextInputWidget textField;
-    private ButtonWidget searchButton;
+    private Button searchButton;
 
     private boolean searching = false;
     private CompletableFuture<?> future = null;
@@ -33,25 +34,25 @@ public class PlayerSearchScreen extends CloseableScreen {
 
     @Override
     protected void init() {
-        String username = I18n.translate("tiertagger.search.user");
-        this.textField = this.addSelectableChild(new TextInputWidget(this.width / 2 - 100, 116, 200, 20,
+        String username = I18n.get("tiertagger.search.user");
+        this.textField = this.addWidget(new TextInputWidget(this.width / 2 - 100, 116, 200, 20,
                 "", s -> {
         }, username, s -> s.matches("[a-zA-Z0-9_-]+"), 32));
 
-        this.searchButton = this.addDrawableChild(
-                ButtonWidget.builder(Text.translatable("tiertagger.search"), button -> this.loadAndShowProfile())
-                        .dimensions(this.width / 2 - 100, this.height / 4 + 96 + 12, 200, 20)
+        this.searchButton = this.addRenderableWidget(
+                Button.builder(Component.translatable("tiertagger.search"), button -> this.loadAndShowProfile())
+                        .bounds(this.width / 2 - 100, this.height / 4 + 96 + 12, 200, 20)
                         .build()
         );
 
-        this.addDrawableChild(
-                ButtonWidget.builder(ScreenTexts.CANCEL, button -> {
+        this.addRenderableWidget(
+                Button.builder(CommonComponents.GUI_CANCEL, button -> {
                             if (this.future != null) {
                                 this.future.cancel(true);
                             }
-                            this.close();
+                            this.onClose();
                         })
-                        .dimensions(this.width / 2 - 100, this.height / 4 + 120 + 12, 200, 20)
+                        .bounds(this.width / 2 - 100, this.height / 4 + 120 + 12, 200, 20)
                         .build()
         );
 
@@ -67,28 +68,28 @@ public class PlayerSearchScreen extends CloseableScreen {
     private void loadAndShowProfile() {
         String username = this.textField.getText();
         this.searching = true;
-        this.searchButton.setMessage(Text.translatable("tiertagger.search.loading"));
+        this.searchButton.setMessage(Component.translatable("tiertagger.search.loading"));
 
-        ApiServices services = MinecraftClient.getInstance().getApiServices();
+        Services services = Minecraft.getInstance().services();
         CompletableFuture<PlayerSkinWidget> skinFuture = CompletableFuture.supplyAsync(() -> {
-            GameProfile profile = services.profileResolver().getProfileByName(username)
+            GameProfile profile = services.profileResolver().fetchByName(username)
                     .orElseGet(() -> new GameProfile(UUID.randomUUID(), username));
 
-            Supplier<SkinTextures> skinSupplier = MinecraftClient.getInstance().getSkinProvider().supplySkinTextures(profile, true);
-            PlayerSkinWidget skin = new PlayerSkinWidget(60, 144, MinecraftClient.getInstance().getLoadedEntityModels(), skinSupplier);
+            Supplier<PlayerSkin> skinSupplier = Minecraft.getInstance().getSkinManager().createLookup(profile, true);
+            PlayerSkinWidget skin = new PlayerSkinWidget(60, 144, Minecraft.getInstance().getEntityModels(), skinSupplier);
             skin.setPosition(this.width / 2 - 65, (this.height - 144) / 2);
             return skin;
         });
 
         this.future = TierCache.searchPlayer(username)
                 .thenCombine(skinFuture, (info, skin) -> new PlayerInfoScreen(this, info, skin))
-                .thenAccept(screen -> MinecraftClient.getInstance().execute(() -> MinecraftClient.getInstance().setScreen(screen)))
+                .thenAccept(screen -> Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(screen)))
                 .whenComplete((v, t) -> {
                     if (t != null) {
-                        Ukutils.sendToast(Text.translatable("tiertagger.search.unknown"), null);
+                        Ukutils.sendToast(Component.translatable("tiertagger.search.unknown"), null);
                     }
                     this.searching = false;
-                    this.searchButton.setMessage(Text.translatable("tiertagger.search"));
+                    this.searchButton.setMessage(Component.translatable("tiertagger.search"));
                 });
     }
 
@@ -100,9 +101,9 @@ public class PlayerSearchScreen extends CloseableScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 16777215);
-        this.textField.render(context, mouseX, mouseY, delta);
+    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 16777215);
+        this.textField.render(graphics, mouseX, mouseY, delta);
     }
 }

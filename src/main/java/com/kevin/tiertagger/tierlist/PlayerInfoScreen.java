@@ -3,16 +3,16 @@ package com.kevin.tiertagger.tierlist;
 import com.kevin.tiertagger.TierTagger;
 import com.kevin.tiertagger.model.GameMode;
 import com.kevin.tiertagger.model.PlayerInfo;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.PlayerSkinWidget;
-import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.PlayerSkinWidget;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
 import net.uku3lig.ukulib.config.screen.CloseableScreen;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,18 +25,18 @@ public class PlayerInfoScreen extends CloseableScreen {
     private final PlayerSkinWidget skin;
 
     public PlayerInfoScreen(Screen parent, PlayerInfo info, PlayerSkinWidget skin) {
-        super(Text.of("Player Info"), parent);
+        super(Component.literal("Player Info"), parent);
         this.info = info;
         this.skin = skin;
     }
 
     @Override
     protected void init() {
-        this.addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> MinecraftClient.getInstance().setScreen(parent))
-                .dimensions(this.width / 2 - 100, this.height - 27, 200, 20)
+        this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> Minecraft.getInstance().setScreen(parent))
+                .bounds(this.width / 2 - 100, this.height - 27, 200, 20)
                 .build());
 
-        this.addDrawableChild(this.skin);
+        this.addRenderableWidget(this.skin);
 
         int rankingHeight = this.info.rankings().size() * 11;
         int infoHeight = 56; // 4 lines of text (10 px tall) + 6 px padding
@@ -47,59 +47,59 @@ public class PlayerInfoScreen extends CloseableScreen {
             // ugly "fix" to avoid crashes if upstream doesn't have the right names
             if (namedRanking.mode() == null) continue;
 
-            TextWidget text = new TextWidget(formatTier(namedRanking.mode(), namedRanking.ranking()), this.textRenderer);
+            StringWidget text = new StringWidget(formatTier(namedRanking.mode(), namedRanking.ranking()), this.font);
             text.setX(this.width / 2 + 5);
             text.setY(rankingY);
 
             String date = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.ofEpochSecond(namedRanking.ranking().attained()));
-            Text tooltipText = Text.literal("Attained: " + date + "\nPoints: " + points(namedRanking.ranking())).formatted(Formatting.GRAY);
-            text.setTooltip(Tooltip.of(tooltipText));
-            this.addDrawableChild(text);
+            Component tooltipText = Component.literal("Attained: " + date + "\nPoints: " + points(namedRanking.ranking())).withStyle(ChatFormatting.GRAY);
+            text.setTooltip(Tooltip.create(tooltipText));
+            this.addRenderableWidget(text);
             rankingY += 11;
         }
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
 
-        context.drawCenteredTextWithShadow(this.textRenderer, this.info.name() + "'s profile", this.width / 2, 20, 0xFFFFFFFF);
+        graphics.drawCenteredString(this.font, this.info.name() + "'s profile", this.width / 2, 20, 0xFFFFFFFF);
 
         int rankingHeight = this.info.rankings().size() * 11;
         int infoHeight = 56; // 4 lines of text (10 px tall) + 6 px padding
         int startY = (this.height - infoHeight - rankingHeight) / 2;
 
-        context.drawTextWithShadow(this.textRenderer, getRegionText(this.info), this.width / 2 + 5, startY, 0xFFFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, getPointsText(this.info), this.width / 2 + 5, startY + 15, 0xFFFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, getRankText(this.info), this.width / 2 + 5, startY + 30, 0xFFFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, "Rankings:", this.width / 2 + 5, startY + 45, 0xFFFFFFFF);
+        graphics.drawString(this.font, getRegionText(this.info), this.width / 2 + 5, startY, 0xFFFFFFFF);
+        graphics.drawString(this.font, getPointsText(this.info), this.width / 2 + 5, startY + 15, 0xFFFFFFFF);
+        graphics.drawString(this.font, getRankText(this.info), this.width / 2 + 5, startY + 30, 0xFFFFFFFF);
+        graphics.drawString(this.font, "Rankings:", this.width / 2 + 5, startY + 45, 0xFFFFFFFF);
     }
 
-    private Text formatTier(@NotNull GameMode gamemode, PlayerInfo.Ranking ranking) {
-        Text tierText = TierTagger.getRankingText(ranking, true);
+    private Component formatTier(@NotNull GameMode gamemode, PlayerInfo.Ranking ranking) {
+        Component tierText = TierTagger.getRankingText(ranking, true);
 
-        return Text.empty()
+        return Component.empty()
                 .append(gamemode.asStyled(true))
-                .append(Text.literal(": ").formatted(Formatting.GRAY))
+                .append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
                 .append(tierText);
     }
 
-    private Text getRegionText(PlayerInfo info) {
-        return Text.empty()
-                .append(Text.literal("Region: "))
-                .append(Text.literal(info.region()).styled(s -> s.withColor(info.getRegionColor())));
+    private Component getRegionText(PlayerInfo info) {
+        return Component.empty()
+                .append(Component.literal("Region: "))
+                .append(Component.literal(info.region()).withStyle(s -> s.withColor(info.getRegionColor())));
     }
 
-    private Text getPointsText(PlayerInfo info) {
+    private Component getPointsText(PlayerInfo info) {
         PlayerInfo.PointInfo pointInfo = info.getPointInfo();
 
-        return Text.empty()
-                .append(Text.literal("Points: "))
-                .append(Text.literal(info.points() + " ").styled(s -> s.withColor(pointInfo.getColor())))
-                .append(Text.literal("(" + pointInfo.getTitle() + ")").styled(s -> s.withColor(pointInfo.getAccentColor())));
+        return Component.empty()
+                .append(Component.literal("Points: "))
+                .append(Component.literal(info.points() + " ").withStyle(s -> s.withColor(pointInfo.getColor())))
+                .append(Component.literal("(" + pointInfo.getTitle() + ")").withStyle(s -> s.withColor(pointInfo.getAccentColor())));
     }
 
-    private Text getRankText(PlayerInfo info) {
+    private Component getRankText(PlayerInfo info) {
         int color = switch (info.overall()) {
             case 1 -> 0xe5ba43;
             case 2 -> 0x808c9c;
@@ -107,9 +107,9 @@ public class PlayerInfoScreen extends CloseableScreen {
             default -> 0x1e2634;
         };
 
-        return Text.empty()
-                .append(Text.literal("Global rank: "))
-                .append(Text.literal("#" + info.overall()).styled(s -> s.withColor(color)));
+        return Component.empty()
+                .append(Component.literal("Global rank: "))
+                .append(Component.literal("#" + info.overall()).withStyle(s -> s.withColor(color)));
     }
 
     private int points(PlayerInfo.Ranking ranking) {
