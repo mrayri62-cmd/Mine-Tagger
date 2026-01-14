@@ -25,7 +25,7 @@ dependencies {
 
     modApi("net.uku3lig:ukulib:${project.property("ukulib_version")}")
 
-    // modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:${project.property("devauth_version")}")
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:${project.property("devauth_version")}")
 }
 
 base {
