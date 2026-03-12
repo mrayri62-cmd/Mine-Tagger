@@ -39,12 +39,11 @@ public class PlayerInfoScreen extends CloseableScreen {
         this.addRenderableWidget(this.skin);
 
         int rankingHeight = this.info.rankings().size() * 11;
-        int infoHeight = 56; // 4 lines of text (10 px tall) + 6 px padding
+        int infoHeight = 56;
         int startY = (this.height - infoHeight - rankingHeight) / 2;
         int rankingY = startY + infoHeight;
 
         for (PlayerInfo.NamedRanking namedRanking : this.info.getSortedTiers()) {
-            // ugly "fix" to avoid crashes if upstream doesn't have the right names
             if (namedRanking.mode() == null) continue;
 
             StringWidget text = new StringWidget(formatTier(namedRanking.mode(), namedRanking.ranking()), this.font);
@@ -66,7 +65,7 @@ public class PlayerInfoScreen extends CloseableScreen {
         graphics.drawCenteredString(this.font, this.info.name() + "'s profile", this.width / 2, 20, 0xFFFFFFFF);
 
         int rankingHeight = this.info.rankings().size() * 11;
-        int infoHeight = 56; // 4 lines of text (10 px tall) + 6 px padding
+        int infoHeight = 56;
         int startY = (this.height - infoHeight - rankingHeight) / 2;
 
         graphics.drawString(this.font, getRegionText(this.info), this.width / 2 + 5, startY, 0xFFFFFFFF);

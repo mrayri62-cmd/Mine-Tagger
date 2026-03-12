@@ -147,8 +147,6 @@ public class TierTagger implements ModInitializer {
             MutableComponent tierText = getTierText(ranking.tier(), ranking.pos(), false);
 
             if (showPeak && ranking.comparablePeak() < ranking.comparableTier()) {
-                // warning caused by potential NPE by unboxing of peak{Tier,Pos} which CANNOT happen, see impl of comparablePeak
-                // noinspection DataFlowIssue
                 tierText.append(Component.literal(" (peak: ").withStyle(s -> s.withColor(ChatFormatting.GRAY)))
                         .append(getTierText(ranking.peakTier(), ranking.peakPos(), false))
                         .append(Component.literal(")").withStyle(s -> s.withColor(ChatFormatting.GRAY)));

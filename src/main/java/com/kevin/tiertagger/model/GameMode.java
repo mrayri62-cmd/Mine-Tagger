@@ -17,14 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 public record GameMode(String id, String title) {
     public static final GameMode NONE = new GameMode("annoying_long_id_that_no_one_will_ever_use_just_to_make_sure", "§cNone§r");
-
-    /**
-     * Fetch available game modes from the Discord bot API
-     * Note: Since the Discord bot doesn't have a /v2/mode/list endpoint,
-     * we return a hardcoded list of the 7 game modes from your bot
-     */
     public static CompletableFuture<List<GameMode>> fetchGamemodes(HttpClient client) {
-        // Return the 7 game modes from your Discord bot
         return CompletableFuture.completedFuture(List.of(
                 new GameMode("sword", "Sword"),
                 new GameMode("smp", "SMP"),
@@ -34,20 +27,6 @@ public record GameMode(String id, String title) {
                 new GameMode("mace", "Mace"),
                 new GameMode("crystal", "Crystal")
         ));
-
-        /* Alternative: If you want to add an endpoint to your Discord bot later:
-        String endpoint = TierTagger.getManager().getConfig().getApiUrl() + "/modes";
-        final HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint)).GET().build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(r -> {
-                    JsonObject obj = TierTagger.GSON.fromJson(r.body(), JsonObject.class);
-                    return obj.entrySet().stream().map(e -> {
-                        String title = e.getValue().getAsJsonObject().get("title").getAsString();
-                        return new GameMode(e.getKey(), title);
-                    }).toList();
-                });
-        */
     }
 
     public boolean isNone() {
@@ -56,7 +35,6 @@ public record GameMode(String id, String title) {
 
     private Pair<Character, TextColor> iconAndColor() {
         return switch (this.id) {
-            // Your Discord bot game modes
             case "sword" -> Pair.of('\uE706', TextColor.fromRgb(0xa4fdf0));
             case "smp" -> Pair.of('\uE705', TextColor.fromRgb(0xeccb45));
             case "uhc" -> Pair.of('\uE707', TextColor.fromLegacyFormat(ChatFormatting.RED));
@@ -65,7 +43,6 @@ public record GameMode(String id, String title) {
             case "mace" -> Pair.of('\uE702', TextColor.fromLegacyFormat(ChatFormatting.GRAY));
             case "crystal" -> Pair.of('\uE805', TextColor.fromLegacyFormat(ChatFormatting.AQUA));
 
-            // Legacy/other modes (kept for compatibility)
             case "axe" -> Pair.of('\uE701', TextColor.fromLegacyFormat(ChatFormatting.GREEN));
             case "pot" -> Pair.of('\uE704', TextColor.fromRgb(0xff0000));
             case "vanilla" -> Pair.of('\uE708', TextColor.fromLegacyFormat(ChatFormatting.LIGHT_PURPLE));

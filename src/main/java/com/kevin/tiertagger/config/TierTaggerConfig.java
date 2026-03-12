@@ -24,7 +24,6 @@ public class TierTaggerConfig implements Serializable {
     private boolean showIcons = true;
     private boolean playerList = true;
     private int retiredColor = 0xa2d6ff;
-    // note: this is a GSON internal class. this *might* break in the future
     private LinkedTreeMap<String, Integer> tierColors = defaultColors();
 
     // === internal stuff ===
@@ -43,19 +42,17 @@ public class TierTaggerConfig implements Serializable {
 
     private static LinkedTreeMap<String, Integer> defaultColors() {
         LinkedTreeMap<String, Integer> colors = new LinkedTreeMap<>();
-        // HT (High Tier) colors - Gold/Yellow tones
-        colors.put("HT1", 0xe8ba3a);  // Bright gold
-        colors.put("HT2", 0xc4d3e7);  // Silver
-        colors.put("HT3", 0xf89f5a);  // Bronze/Orange
-        colors.put("HT4", 0x81749a);  // Purple
-        colors.put("HT5", 0x8f82a8);  // Light purple
+        colors.put("HT1", 0xe8ba3a);
+        colors.put("HT2", 0xc4d3e7);
+        colors.put("HT3", 0xf89f5a);
+        colors.put("HT4", 0x81749a);
+        colors.put("HT5", 0x8f82a8);
 
-        // LT (Low Tier) colors - Darker/muted tones
-        colors.put("LT1", 0xd5b355);  // Dark gold
-        colors.put("LT2", 0xa0a7b2);  // Dark silver
-        colors.put("LT3", 0xc67b42);  // Dark bronze
-        colors.put("LT4", 0x655b79);  // Dark purple
-        colors.put("LT5", 0x655b79);  // Dark purple
+        colors.put("LT1", 0xd5b355);
+        colors.put("LT2", 0xa0a7b2);
+        colors.put("LT3", 0xc67b42);
+        colors.put("LT4", 0x655b79);
+        colors.put("LT5", 0x655b79);
 
         return colors;
     }

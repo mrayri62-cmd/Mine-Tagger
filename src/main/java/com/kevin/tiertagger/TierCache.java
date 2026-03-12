@@ -15,22 +15,16 @@ public class TierCache {
     public static void init() {
         try {
             GAMEMODES.clear();
-            // Fetch game modes from Discord bot (or use hardcoded list)
             GAMEMODES.addAll(GameMode.fetchGamemodes(TierTagger.getClient()).get());
             TierTagger.getLogger().info("Found {} tierlists: {}", GAMEMODES.size(), GAMEMODES.stream().map(GameMode::id).toList());
         } catch (ExecutionException e) {
             TierTagger.getLogger().error("Failed to load gamemodes!", e);
-            // Fallback to hardcoded list if API fails
             loadDefaultGamemodes();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             loadDefaultGamemodes();
         }
     }
-
-    /**
-     * Fallback: Load default game modes if API fetch fails
-     */
     private static void loadDefaultGamemodes() {
         GAMEMODES.clear();
         GAMEMODES.add(new GameMode("sword", "Sword"));
@@ -50,20 +44,13 @@ public class TierCache {
             return GAMEMODES;
         }
     }
-
-    /**
-     * Get player rankings from cache or fetch from Discord bot
-     * Note: Discord bot returns only the best tier, not all tiers per mode
-     */
     public static Optional<Map<String, PlayerInfo.Ranking>> getPlayerRankings(UUID uuid) {
         return TIERS.computeIfAbsent(uuid, u -> {
-            // Only fetch for valid Minecraft UUIDs (version 4)
             if (uuid.version() != 4) {
                 return Optional.empty();
             }
 
             try {
-                // Fetch rankings asynchronously and update cache when complete
                 PlayerInfo.getRankings(TierTagger.getClient(), uuid)
                         .thenAccept(rankings -> {
                             if (rankings != null && !rankings.isEmpty()) {
@@ -82,30 +69,20 @@ public class TierCache {
                 return Optional.empty();
             }
 
-            // Return empty initially, will be populated when fetch completes
             return Optional.empty();
         });
     }
-
-    /**
-     * Search player by name
-     * Note: Discord bot doesn't support name search (UUID-only)
-     * This will return empty results
-     */
     public static CompletableFuture<PlayerInfo> searchPlayer(String query) {
         TierTagger.getLogger().warn("Player search by name is not supported by Discord bot API");
-
-        // Discord bot doesn't support name search
-        // Return a CompletableFuture with empty PlayerInfo
         return CompletableFuture.completedFuture(new PlayerInfo(
-                "",  // Empty UUID
-                query,  // Use query as name
-                new HashMap<>(),  // No rankings
-                "N/A",  // No region
-                0,  // No points
-                0,  // No overall
-                new ArrayList<>(),  // No badges
-                false  // Not combat master
+                "",
+                query,
+                new HashMap<>(),
+                "N/A",
+                0,
+                0,
+                new ArrayList<>(),
+                false
         ));
     }
 
@@ -130,15 +107,10 @@ public class TierCache {
         return findMode(id).orElseGet(() -> new GameMode(id, id));
     }
 
-    /**
-     * Parse UUID string with or without dashes
-     */
     private static UUID parseUUID(String uuid) {
         try {
-            // Try standard UUID format first (with dashes)
             return UUID.fromString(uuid);
         } catch (Exception e) {
-            // Handle UUID without dashes (32 hex characters)
             if (uuid.length() == 32) {
                 try {
                     long mostSignificant = Long.parseUnsignedLong(uuid.substring(0, 16), 16);
@@ -146,11 +118,11 @@ public class TierCache {
                     return new UUID(mostSignificant, leastSignificant);
                 } catch (Exception ex) {
                     TierTagger.getLogger().error("Failed to parse UUID: {}", uuid, ex);
-                    return UUID.randomUUID(); // Fallback
+                    return UUID.randomUUID();
                 }
             } else {
                 TierTagger.getLogger().error("Invalid UUID length: {}", uuid);
-                return UUID.randomUUID(); // Fallback
+                return UUID.randomUUID();
             }
         }
     }

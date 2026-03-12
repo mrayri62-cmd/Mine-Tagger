@@ -21,17 +21,9 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
     public record Ranking(int tier, int pos, @Nullable @SerializedName("peak_tier") Integer peakTier,
                           @Nullable @SerializedName("peak_pos") Integer peakPos, long attained,
                           boolean retired) {
-
-        /**
-         * Lower is better.
-         */
         public int comparableTier() {
             return tier * 2 + pos;
         }
-
-        /**
-         * Lower is better.
-         */
         public int comparablePeak() {
             if (peakTier == null || peakPos == null) {
                 return Integer.MAX_VALUE;
@@ -60,12 +52,6 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
             "AS", 0xc27ba0,
             "AF", 0x674ea7
     );
-
-    /**
-     * Get player info from Discord bot API
-     * Note: Discord bot has simplified API - returns just tier and gameMode
-     * This builds a PlayerInfo object from the limited data
-     */
     public static CompletableFuture<PlayerInfo> get(HttpClient client, UUID uuid) {
         String apiUrl = TierTagger.getManager().getConfig().getApiUrl();
 
@@ -75,7 +61,6 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
             return CompletableFuture.completedFuture(createEmptyPlayerInfo(uuid.toString()));
         }
 
-        // Remove trailing slash if present
         if (apiUrl.endsWith("/")) {
             apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
         }
@@ -86,7 +71,7 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
 
         final HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
                 .GET()
-                .timeout(java.time.Duration.ofSeconds(3))  // 3 second timeout instead of default
+                .timeout(java.time.Duration.ofSeconds(3))
                 .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -96,29 +81,24 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
                     try {
                         JsonObject json = TierTagger.GSON.fromJson(s, JsonObject.class);
 
-                        // New API format: {"sword": "H5", "crystal": "H5", "diapot": "L5", ...}
                         Map<String, Ranking> rankings = new HashMap<>();
 
                         for (String gameMode : json.keySet()) {
                             if (json.get(gameMode).isJsonNull()) {
-                                // No tier for this mode
                                 continue;
                             }
 
-                            String tierShort = json.get(gameMode).getAsString();  // "H5", "L5", etc.
+                            String tierShort = json.get(gameMode).getAsString();
 
                             if (tierShort == null || tierShort.length() != 2) {
                                 continue;
                             }
 
-                            // Convert H5 -> HT5, L5 -> LT5
                             String tierFull = tierShort.charAt(0) + "T" + tierShort.charAt(1);
 
-                            // Parse tier number and position
                             int tierNum = Character.getNumericValue(tierFull.charAt(2));
                             int pos = tierFull.startsWith("HT") ? 0 : 1;
 
-                            // Create ranking for this game mode
                             Ranking ranking = new Ranking(
                                     tierNum,
                                     pos,
@@ -160,10 +140,6 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
                     if (t != null) TierTagger.getLogger().debug("Error getting player info ({}): {}", uuid, t.getMessage());
                 });
     }
-
-    /**
-     * Create an empty PlayerInfo object
-     */
     private static PlayerInfo createEmptyPlayerInfo(String uuid) {
         return new PlayerInfo(
                 uuid,
@@ -177,12 +153,7 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
         );
     }
 
-    /**
-     * Get rankings from Discord bot API
-     * Returns map of gameMode -> Ranking
-     */
     public static CompletableFuture<Map<String, Ranking>> getRankings(HttpClient client, UUID uuid) {
-        // Discord bot only returns best tier, so we call the same endpoint
         return get(client, uuid)
                 .thenApply(PlayerInfo::rankings)
                 .exceptionally(throwable -> {
@@ -190,16 +161,9 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
                     return new HashMap<>();
                 });
     }
-
-    /**
-     * Search player by name - Not supported by Discord bot
-     * Discord bot uses UUID-based lookups only
-     */
     public static CompletableFuture<PlayerInfo> search(HttpClient client, String query) {
-        // Not supported by Discord bot - would need to add endpoint
         TierTagger.getLogger().warn("Player search by name not supported by Discord bot API");
 
-        // Return empty result
         return CompletableFuture.completedFuture(new PlayerInfo(
                 "",
                 query,
@@ -241,7 +205,6 @@ public record PlayerInfo(String uuid, String name, Map<String, Ranking> rankings
     }
 
     public PointInfo getPointInfo() {
-        // Discord bot doesn't have points system, always return UNRANKED
         return PointInfo.UNRANKED;
     }
 

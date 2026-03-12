@@ -26,7 +26,7 @@ public enum TierList {
     public static Optional<TierList> findByUrl(String url) {
         if (url.endsWith("/")) url = url.substring(0, url.length() - 1);
 
-        final String finalUrl = url; // i :heart: java
+        final String finalUrl = url;
         return Arrays.stream(values()).filter(list -> list.url.equals(finalUrl)).findFirst();
     }
 }
