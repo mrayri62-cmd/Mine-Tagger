@@ -28,12 +28,7 @@ public class TierTaggerConfig implements Serializable {
     private LinkedTreeMap<String, Integer> tierColors = defaultColors();
 
     // === internal stuff ===
-
-    /**
-     * <p>the field was renamed to do a little trolling and force it setting to the default value in players' config</p>
-     * <p>previous name(s): {@code baseUrl}</p>
-     */
-    private String apiUrl = "https://mctiers.com/api";
+    private String apiUrl = "https://privateurl";
 
     public GameMode getGameMode() {
         Optional<GameMode> opt = TierCache.findMode(this.gameMode);
@@ -48,16 +43,19 @@ public class TierTaggerConfig implements Serializable {
 
     private static LinkedTreeMap<String, Integer> defaultColors() {
         LinkedTreeMap<String, Integer> colors = new LinkedTreeMap<>();
-        colors.put("HT1", 0xe8ba3a);
-        colors.put("LT1", 0xd5b355);
-        colors.put("HT2", 0xc4d3e7);
-        colors.put("LT2", 0xa0a7b2);
-        colors.put("HT3", 0xf89f5a);
-        colors.put("LT3", 0xc67b42);
-        colors.put("HT4", 0x81749a);
-        colors.put("LT4", 0x655b79);
-        colors.put("HT5", 0x8f82a8);
-        colors.put("LT5", 0x655b79);
+        // HT (High Tier) colors - Gold/Yellow tones
+        colors.put("HT1", 0xe8ba3a);  // Bright gold
+        colors.put("HT2", 0xc4d3e7);  // Silver
+        colors.put("HT3", 0xf89f5a);  // Bronze/Orange
+        colors.put("HT4", 0x81749a);  // Purple
+        colors.put("HT5", 0x8f82a8);  // Light purple
+
+        // LT (Low Tier) colors - Darker/muted tones
+        colors.put("LT1", 0xd5b355);  // Dark gold
+        colors.put("LT2", 0xa0a7b2);  // Dark silver
+        colors.put("LT3", 0xc67b42);  // Dark bronze
+        colors.put("LT4", 0x655b79);  // Dark purple
+        colors.put("LT5", 0x655b79);  // Dark purple
 
         return colors;
     }

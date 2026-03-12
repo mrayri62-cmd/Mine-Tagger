@@ -9,8 +9,8 @@ import java.util.Optional;
 @Getter
 @AllArgsConstructor
 public enum TierList {
-    MCTIERS("MCTiers", "https://mctiers.com/api", '\uE901'),
-    SUBTIERS("SubTiers", "https://subtiers.net/api", '\uE902'),
+
+    MINE_TIERS("Mine Tiers", "http://45.43.163.175:25626", '\uE901'),
     ;
 
     private final String name;

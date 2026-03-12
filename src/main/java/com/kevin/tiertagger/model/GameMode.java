@@ -18,19 +18,36 @@ import java.util.concurrent.CompletableFuture;
 public record GameMode(String id, String title) {
     public static final GameMode NONE = new GameMode("annoying_long_id_that_no_one_will_ever_use_just_to_make_sure", "§cNone§r");
 
+    /**
+     * Fetch available game modes from the Discord bot API
+     * Note: Since the Discord bot doesn't have a /v2/mode/list endpoint,
+     * we return a hardcoded list of the 7 game modes from your bot
+     */
     public static CompletableFuture<List<GameMode>> fetchGamemodes(HttpClient client) {
-        String endpoint = TierTagger.getManager().getConfig().getApiUrl() + "/v2/mode/list";
+        // Return the 7 game modes from your Discord bot
+        return CompletableFuture.completedFuture(List.of(
+                new GameMode("sword", "Sword"),
+                new GameMode("smp", "SMP"),
+                new GameMode("uhc", "UHC"),
+                new GameMode("nethpot", "NethPot"),
+                new GameMode("diapot", "DiaPot"),
+                new GameMode("mace", "Mace"),
+                new GameMode("crystal", "Crystal")
+        ));
+
+        /* Alternative: If you want to add an endpoint to your Discord bot later:
+        String endpoint = TierTagger.getManager().getConfig().getApiUrl() + "/modes";
         final HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint)).GET().build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(r -> {
                     JsonObject obj = TierTagger.GSON.fromJson(r.body(), JsonObject.class);
-
                     return obj.entrySet().stream().map(e -> {
                         String title = e.getValue().getAsJsonObject().get("title").getAsString();
                         return new GameMode(e.getKey(), title);
                     }).toList();
                 });
+        */
     }
 
     public boolean isNone() {
@@ -39,13 +56,18 @@ public record GameMode(String id, String title) {
 
     private Pair<Character, TextColor> iconAndColor() {
         return switch (this.id) {
-            case "axe" -> Pair.of('\uE701', TextColor.fromLegacyFormat(ChatFormatting.GREEN));
-            case "mace" -> Pair.of('\uE702', TextColor.fromLegacyFormat(ChatFormatting.GRAY));
-            case "nethop", "neth_pot" -> Pair.of('\uE703', TextColor.fromRgb(0x7d4a40));
-            case "pot" -> Pair.of('\uE704', TextColor.fromRgb(0xff0000));
-            case "smp" -> Pair.of('\uE705', TextColor.fromRgb(0xeccb45));
+            // Your Discord bot game modes
             case "sword" -> Pair.of('\uE706', TextColor.fromRgb(0xa4fdf0));
+            case "smp" -> Pair.of('\uE705', TextColor.fromRgb(0xeccb45));
             case "uhc" -> Pair.of('\uE707', TextColor.fromLegacyFormat(ChatFormatting.RED));
+            case "nethpot", "neth_pot" -> Pair.of('\uE703', TextColor.fromRgb(0x7d4a40));
+            case "diapot", "dia_pot" -> Pair.of('\uE704', TextColor.fromRgb(0xff0000));
+            case "mace" -> Pair.of('\uE702', TextColor.fromLegacyFormat(ChatFormatting.GRAY));
+            case "crystal" -> Pair.of('\uE805', TextColor.fromLegacyFormat(ChatFormatting.AQUA));
+
+            // Legacy/other modes (kept for compatibility)
+            case "axe" -> Pair.of('\uE701', TextColor.fromLegacyFormat(ChatFormatting.GREEN));
+            case "pot" -> Pair.of('\uE704', TextColor.fromRgb(0xff0000));
             case "vanilla" -> Pair.of('\uE708', TextColor.fromLegacyFormat(ChatFormatting.LIGHT_PURPLE));
             case "bed" -> Pair.of('\uE801', TextColor.fromRgb(0xff0000));
             case "bow" -> Pair.of('\uE802', TextColor.fromRgb(0x663d10));

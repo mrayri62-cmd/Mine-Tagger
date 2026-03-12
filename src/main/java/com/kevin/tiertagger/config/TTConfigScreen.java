@@ -55,7 +55,14 @@ public class TTConfigScreen extends TabbedConfigScreen<TierTaggerConfig> {
 
         @Override
         protected WidgetCreator[] getWidgets(TierTaggerConfig config) {
-            Optional<TierList> current = TierList.findByUrl(config.getApiUrl());
+            // Check if current URL matches any TierList
+            String currentUrl = config.getApiUrl();
+            if (currentUrl != null && currentUrl.endsWith("/")) {
+                currentUrl = currentUrl.substring(0, currentUrl.length() - 1);
+            }
+
+            final String finalCurrentUrl = currentUrl;
+            Optional<TierList> current = TierList.findByUrl(finalCurrentUrl);
 
             List<WidgetCreator> widgets = Arrays.stream(TierList.values())
                     .map(t -> {
@@ -70,8 +77,8 @@ public class TTConfigScreen extends TabbedConfigScreen<TierTaggerConfig> {
                     })
                     .collect(Collectors.toList());
 
-            if (current.isEmpty()) {
-                widgets.add(new SimpleButton(Component.literal("Custom (selected, " + config.getApiUrl() + ")"), b -> {}, false));
+            if (current.isEmpty() && finalCurrentUrl != null && !finalCurrentUrl.isEmpty()) {
+                widgets.add(new SimpleButton(Component.literal("Custom (selected, " + finalCurrentUrl + ")"), b -> {}, false));
             }
 
             return widgets.toArray(WidgetCreator[]::new);
