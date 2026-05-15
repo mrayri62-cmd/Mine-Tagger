@@ -7,6 +7,6 @@ Modrinth: https://modrinth.com/project/plR1TgE7
 
 ## Repository layout
 
-- The repository root tracks the latest `1.21.11` source line.
-- Full version packs for `1.21` through `1.21.11` live in [`versions`](./versions).
-- Each version folder contains a ready-to-use jar and a matching source snapshot.
+- `main` tracks the latest `1.21.11` source line.
+- Older Minecraft versions are available as dedicated Git branches such as `1.21`, `1.21.1`, `1.21.2`, and so on.
+- Some nearby versions share the same code line when upstream support was identical.
