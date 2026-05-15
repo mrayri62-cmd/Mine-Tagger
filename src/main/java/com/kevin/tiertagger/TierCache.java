@@ -19,22 +19,9 @@ public class TierCache {
             TierTagger.getLogger().info("Found {} tierlists: {}", GAMEMODES.size(), GAMEMODES.stream().map(GameMode::id).toList());
         } catch (ExecutionException e) {
             TierTagger.getLogger().error("Failed to load gamemodes!", e);
-            loadDefaultGamemodes();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            loadDefaultGamemodes();
         }
-    }
-    private static void loadDefaultGamemodes() {
-        GAMEMODES.clear();
-        GAMEMODES.add(new GameMode("sword", "Sword"));
-        GAMEMODES.add(new GameMode("smp", "SMP"));
-        GAMEMODES.add(new GameMode("uhc", "UHC"));
-        GAMEMODES.add(new GameMode("nethpot", "NethPot"));
-        GAMEMODES.add(new GameMode("diapot", "DiaPot"));
-        GAMEMODES.add(new GameMode("mace", "Mace"));
-        GAMEMODES.add(new GameMode("crystal", "Crystal"));
-        TierTagger.getLogger().info("Loaded {} default game modes", GAMEMODES.size());
     }
 
     public static List<GameMode> getGamemodes() {
@@ -44,51 +31,27 @@ public class TierCache {
             return GAMEMODES;
         }
     }
+
     public static Optional<Map<String, PlayerInfo.Ranking>> getPlayerRankings(UUID uuid) {
         return TIERS.computeIfAbsent(uuid, u -> {
-            if (uuid.version() != 4) {
-                return Optional.empty();
-            }
-
-            try {
-                PlayerInfo.getRankings(TierTagger.getClient(), uuid)
-                        .thenAccept(rankings -> {
-                            if (rankings != null && !rankings.isEmpty()) {
-                                TIERS.put(uuid, Optional.of(rankings));
-                            } else {
-                                TIERS.put(uuid, Optional.empty());
-                            }
-                        })
-                        .exceptionally(throwable -> {
-                            TierTagger.getLogger().debug("Failed to fetch rankings for {}: {}", uuid, throwable.getMessage());
-                            TIERS.put(uuid, Optional.empty());
-                            return null;
-                        });
-            } catch (Exception e) {
-                TierTagger.getLogger().error("Error initiating fetch for {}: {}", uuid, e.getMessage());
-                return Optional.empty();
+            if (uuid.version() == 4) {
+                PlayerInfo.getRankings(TierTagger.getClient(), uuid).thenAccept(info -> TIERS.put(uuid, Optional.ofNullable(info)));
             }
 
             return Optional.empty();
         });
     }
+
     public static CompletableFuture<PlayerInfo> searchPlayer(String query) {
-        TierTagger.getLogger().warn("Player search by name is not supported by Discord bot API");
-        return CompletableFuture.completedFuture(new PlayerInfo(
-                "",
-                query,
-                new HashMap<>(),
-                "N/A",
-                0,
-                0,
-                new ArrayList<>(),
-                false
-        ));
+        return PlayerInfo.search(TierTagger.getClient(), query).thenApply(p -> {
+            UUID uuid = parseUUID(p.uuid());
+            TIERS.put(uuid, Optional.of(p.rankings()));
+            return p;
+        });
     }
 
     public static void clearCache() {
         TIERS.clear();
-        TierTagger.getLogger().info("Tier cache cleared");
     }
 
     public static GameMode findNextMode(GameMode current) {
@@ -111,19 +74,9 @@ public class TierCache {
         try {
             return UUID.fromString(uuid);
         } catch (Exception e) {
-            if (uuid.length() == 32) {
-                try {
-                    long mostSignificant = Long.parseUnsignedLong(uuid.substring(0, 16), 16);
-                    long leastSignificant = Long.parseUnsignedLong(uuid.substring(16), 16);
-                    return new UUID(mostSignificant, leastSignificant);
-                } catch (Exception ex) {
-                    TierTagger.getLogger().error("Failed to parse UUID: {}", uuid, ex);
-                    return UUID.randomUUID();
-                }
-            } else {
-                TierTagger.getLogger().error("Invalid UUID length: {}", uuid);
-                return UUID.randomUUID();
-            }
+            long mostSignificant = Long.parseUnsignedLong(uuid.substring(0, 16), 16);
+            long leastSignificant = Long.parseUnsignedLong(uuid.substring(16), 16);
+            return new UUID(mostSignificant, leastSignificant);
         }
     }
 

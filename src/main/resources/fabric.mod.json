@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tier-tagger",
   "version": "${version}",
-  "name": "InfinityZ Tagger",
+  "name": "TierTagger",
   "description": "Display player's PvP Tiers in their nametag!",
   "authors": ["uku", "netiyiy (original creator)"],
   "contact": {
@@ -25,7 +25,8 @@
   ],
   "depends": {
     "fabricloader": ">=0.17",
-    "minecraft": ">=1.21.11",
-    "ukulib": "^1.10.1"
+    "minecraft": ">=1.21.9",
+    "ukulib": "^1.9.0"
   }
 }
+

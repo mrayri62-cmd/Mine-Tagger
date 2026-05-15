@@ -1,12 +1,12 @@
 plugins {
-    id("fabric-loom") version "1.14.10"
+    id("net.fabricmc.fabric-loom-remap") version "1.14-SNAPSHOT"
+    id("io.freefair.lombok") version "9.1.0"
 }
 
 version = "${project.property("mod_version")}+mc${project.property("minecraft_version")}"
 group = project.property("maven_group") as String
 
 repositories {
-    mavenCentral()
     maven {
         url = uri("https://maven.uku3lig.net/releases")
     }
@@ -18,10 +18,8 @@ repositories {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
-    mappings(loom.officialMojangMappings())
+    mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
     modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
-    compileOnly(files("libs/lombok-1.18.42.jar"))
-    annotationProcessor(files("libs/lombok-1.18.42.jar"))
 
     modImplementation(fabricApi.module("fabric-command-api-v2", project.property("fabric_api_version") as String))
 
