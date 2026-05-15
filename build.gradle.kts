@@ -20,8 +20,8 @@ dependencies {
     minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
-    compileOnly(files("libs/lombok-1.18.42.jar"))
-    annotationProcessor(files("libs/lombok-1.18.42.jar"))
+    compileOnly("org.projectlombok:lombok:1.18.42")
+    annotationProcessor("org.projectlombok:lombok:1.18.42")
 
     modImplementation(fabricApi.module("fabric-command-api-v2", project.property("fabric_api_version") as String))
 
