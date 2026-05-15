@@ -1,5 +1,5 @@
 {
-  "key.category.tiertagger.key": "TierTagger",
+  "tiertagger.name": "TierTagger",
   "tiertagger.config": "Settings",
   "tiertagger.config.tierlists": "Tierlists",
   "tiertagger.config.enabled": "Enabled",
