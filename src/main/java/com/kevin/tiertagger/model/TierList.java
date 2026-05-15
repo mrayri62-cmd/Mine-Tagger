@@ -9,8 +9,8 @@ import java.util.Optional;
 @Getter
 @AllArgsConstructor
 public enum TierList {
-
-    MINE_TIERS("Mine Tiers", "http://45.43.163.175:25626", '\uE901'),
+    MCTIERS("MCTiers", "https://mctiers.com/api", '\uE901'),
+    SUBTIERS("SubTiers", "https://subtiers.net/api", '\uE902'),
     ;
 
     private final String name;
@@ -26,7 +26,7 @@ public enum TierList {
     public static Optional<TierList> findByUrl(String url) {
         if (url.endsWith("/")) url = url.substring(0, url.length() - 1);
 
-        final String finalUrl = url;
+        final String finalUrl = url; // i :heart: java
         return Arrays.stream(values()).filter(list -> list.url.equals(finalUrl)).findFirst();
     }
 }
